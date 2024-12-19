@@ -29,13 +29,13 @@ with DAG(
     # Task 1: Extract Data and Upload to GCS
     # -------------------------
     def extract_and_upload():
-        SERVICE_ACCOUNT_FILE = 'tpds-445105-aafa6b454353.json'
+        SERVICE_ACCOUNT_FILE = GOOGLE_APPLICATION_CREDENTIALS
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
         
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         gc = gspread.authorize(creds)
 
-        SHEET_ID = '1TU4xxs1PeGvZv6NH9g0uPv4Io8oLTum276cyccsska8'
+        SHEET_ID = SHEET_ID
         sh = gc.open_by_key(SHEET_ID)
         worksheet = sh.get_worksheet(0)  # first sheet/tab
         data = worksheet.get_all_values()
@@ -43,6 +43,7 @@ with DAG(
         header = data[0]
         rows = data[1:]
 
+        #saves the file locally
         CSV_FILENAME = 'subscriptions_data.csv'
         with open(CSV_FILENAME, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -53,7 +54,7 @@ with DAG(
 
         # Upload to GCS
         storage_client = storage.Client.from_service_account_json(SERVICE_ACCOUNT_FILE)
-        BUCKET_NAME = 'tpdsbucket'
+        BUCKET_NAME = BUCKET_NAME
         bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(CSV_FILENAME)
         blob.upload_from_filename(CSV_FILENAME)
