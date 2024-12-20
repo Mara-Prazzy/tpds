@@ -109,7 +109,7 @@ with DAG(
     )
 
     # -------------------------
-    # Task 4.1: Create Waterfall Retention View (Cleaned)
+    # Task 4: Create Waterfall Retention View (Cleaned)
     # -------------------------
     create_waterfall_view = BigQueryInsertJobOperator(
         task_id='create_waterfall_view',
@@ -203,7 +203,7 @@ with DAG(
     )
 
     # -------------------------
-    # Task 4.2: Create Retention Percentage View (Cleaned)
+    # Task 5: Create Retention Percentage View (Cleaned)
     # This runs in parallel to the waterfall view after cleaned data is ready.
     # -------------------------
     create_retention_percentage = BigQueryInsertJobOperator(
@@ -247,50 +247,8 @@ with DAG(
         location="northamerica-northeast2"
     )
 
-
-    # -------------------------
-    # Task 5: Create Waterfall Retention 6Month View (Cleaned)
-    # -------------------------
-    create_waterfall_6M_view = BigQueryInsertJobOperator(
-        task_id='create_waterfall_6M_view',
-        configuration={
-            "query": {
-                "query": """
-                    CREATE OR REPLACE VIEW `tpds-445105.subscriptions_analysis.waterfall_retention_6M` AS
-                    SELECT
-                    subscription_started AS cohort_start_date,
-                    -- First 6 Months
-                    (Month_1 + Month_2 + Month_3 + Month_4 + Month_5 + Month_6) AS First_Six_Months,
-                    -- Second 6 Months
-                    (Month_7 + Month_8 + Month_9 + Month_10 + Month_11 + Month_12) AS Second_Six_Months,
-                    -- Third 6 Months
-                    (Month_13 + Month_14 + Month_15 + Month_16 + Month_17 + Month_18) AS Third_Six_Months,
-                    -- Fourth 6 Months
-                    (Month_19 + Month_20 + Month_21 + Month_22 + Month_23 + Month_24) AS Fourth_Six_Months,
-                    -- Fifth 6 Months
-                    (Month_25 + Month_26 + Month_27 + Month_28 + Month_29 + Month_30) AS Fifth_Six_Months,
-                    -- Sixth 6 Months
-                    (Month_31 + Month_32 + Month_33 + Month_34 + Month_35 + Month_36) AS Sixth_Six_Months,
-                    -- Seventh 6 Months
-                    (Month_37 + Month_38 + Month_39 + Month_40 + Month_41 + Month_42) AS Seventh_Six_Months,
-                    -- Eighth 6 Months
-                    (Month_43 + Month_44 + Month_45 + Month_46 + Month_47 + Month_48) AS Eighth_Six_Months,
-                    -- Ninth 6 Months
-                    (Month_49 + Month_50 + Month_51 + Month_52 + Month_53 + Month_54) AS Ninth_Six_Months,
-                    -- Last 3 Months (Month 61-63)
-                    (Month_61 + Month_62 + Month_63) AS Tenth_Six_Months
-                    FROM
-                    `subscriptions_analysis.waterfall_retention_view_cleaned`;
-                """,
-                "use_legacy_sql":False
-            }
-        },
-        location="northamerica-northeast2"
-    )
-
     # Set task dependencies:
     # extract_data -> load_to_bq -> create_cleaned_data -> create_waterfall_view
     #                                            \
     #                                             -> create_retention_percentage
     extract_data >> load_to_bq >> create_cleaned_data >> [create_waterfall_view, create_retention_percentage]
-    create_waterfall_view >> create_waterfall_6M_view
